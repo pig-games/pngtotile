@@ -1,7 +1,7 @@
-use std::collections::{HashMap, HashSet};
+use std::collections::HashMap;
 use std::fs::File;
 use std::io::prelude::*;
-
+use log::debug;
 use png::Transformations;
 
 fn main() -> std::io::Result<()> {
@@ -12,7 +12,7 @@ fn main() -> std::io::Result<()> {
     trans.insert(Transformations::from_bits_truncate(0x0002));
     decoder.set_transformations(trans);
     let mut reader = decoder.read_info().unwrap();
-    eprintln!("png info: {:?}", reader.info());
+    debug!("png info: {:?}", reader.info());
     // Allocate the output buffer.
     // let mut buf = vec![0; reader.output_buffer_size()];
     // Read the next frame. An APNG might contain multiple frames.
@@ -27,7 +27,7 @@ fn main() -> std::io::Result<()> {
     let bytes = &buf[..info.buffer_size()];
     let mut palette: HashMap<(u8, u8, u8), u8> = HashMap::new();
     let mut byte_iter = bytes.iter();
-    let mut last_index = 1;
+    let mut last_index = 0;
     loop {
         let Some(r) = byte_iter.next() else {
                 break;
@@ -42,12 +42,18 @@ fn main() -> std::io::Result<()> {
         if let Some(index) = palette.get(&rgb) {
             out_file.write(&[*index]).unwrap();
         } else {
-            last_index += 1;
             palette.insert(rgb, last_index);
             out_file.write(&[last_index]).unwrap();
-            eprintln!("{:?}", rgb);
+            debug!("{:?}", rgb);
+            last_index += 1;
         }
     }
+    let mut palette_file = File::create("out.pal").unwrap();
+    let mut pal_vec: Vec<(&(u8, u8, u8), &u8)> = palette.iter().collect();
+    pal_vec.sort_by(|a, b| a.1.cmp(b.1));
+    for ((r,g,b), _) in pal_vec.iter() {
+        debug!("{},{},{}", r, g, b);
+        palette_file.write(&[*r, *g, *b, 255]).unwrap();
+    }
     Ok(())
-    // write bytes to out_file
 }

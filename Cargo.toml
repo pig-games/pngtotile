@@ -7,4 +7,5 @@ edition = "2021"
 
 [dependencies]
 clap = "4.2.1"
+log = "0.4.17"
 png = "0.17.7"
