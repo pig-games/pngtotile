@@ -3,14 +3,31 @@ use std::fs::File;
 use std::io::prelude::*;
 use log::debug;
 use png::Transformations;
+use clap::Parser;
+use std::path::PathBuf;
 
+#[derive(Parser, Debug)]
+#[command(author, version, about, long_about = None)]
+struct Args {
+    path: PathBuf,
+
+    #[arg(short, long)]
+    bin: Option<PathBuf>,
+
+    #[arg(short, long)]
+    pal: Option<PathBuf>
+}
 fn main() -> std::io::Result<()> {
-    let mut decoder = png::Decoder::new(File::open("test.png")?);
+    let args = Args::parse();
+    let bin_out_path = args.bin.unwrap_or_else(|| args.path.as_path().with_extension("bin"));
+    let pal_out_path = args.pal.unwrap_or_else(|| args.path.as_path().with_extension("pal.bin"));
+
+    let mut decoder = png::Decoder::new(File::open(args.path)?);
     let mut trans = Transformations::normalize_to_color8();
     trans.insert(Transformations::from_bits_truncate(0x0002));
     decoder.set_transformations(trans);
     let mut reader = decoder.read_info()?;
-    let mut out_file = File::create("out.bin")?;
+    let mut out_file = File::create(bin_out_path)?;
     let mut buf = vec![0; reader.output_buffer_size()];
     let info = reader.next_frame(&mut buf)?;
     // Grab the bytes of the image.
@@ -38,7 +55,7 @@ fn main() -> std::io::Result<()> {
             last_index += 1;
         }
     }
-    let mut palette_file = File::create("out.pal")?;
+    let mut palette_file = File::create(pal_out_path)?;
     let mut pal_vec: Vec<(&(u8, u8, u8), &u8)> = palette.iter().collect();
     pal_vec.sort_by(|a, b| a.1.cmp(b.1));
     for ((r,g,b), _) in pal_vec.iter() {
