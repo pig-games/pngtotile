@@ -51,7 +51,7 @@ fn main() -> std::io::Result<()> {
         } else {
             palette.insert(rgb, last_index);
             out_file.write(&[last_index])?;
-            println!("{:?}", rgb);
+            debug!("{:?}", rgb);
             last_index += 1;
         }
     }
@@ -59,7 +59,7 @@ fn main() -> std::io::Result<()> {
     let mut pal_vec: Vec<(&(u8, u8, u8), &u8)> = palette.iter().collect();
     pal_vec.sort_by(|a, b| a.1.cmp(b.1));
     for ((r,g,b), _) in pal_vec.iter() {
-        println!("{},{},{}", r, g, b);
+        debug!("{},{},{}", r, g, b);
         palette_file.write(&[*b, *g, *r, 255])?;
     }
     Ok(())
