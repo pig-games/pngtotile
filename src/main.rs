@@ -1,9 +1,9 @@
+use clap::Parser;
+use log::debug;
+use png::Transformations;
 use std::collections::HashMap;
 use std::fs::File;
 use std::io::prelude::*;
-use log::debug;
-use png::Transformations;
-use clap::Parser;
 use std::path::PathBuf;
 
 #[derive(Parser, Debug)]
@@ -15,12 +15,17 @@ struct Args {
     bin: Option<PathBuf>,
 
     #[arg(short, long)]
-    pal: Option<PathBuf>
+    pal: Option<PathBuf>,
 }
+
 fn main() -> std::io::Result<()> {
     let args = Args::parse();
-    let bin_out_path = args.bin.unwrap_or_else(|| args.path.as_path().with_extension("bin"));
-    let pal_out_path = args.pal.unwrap_or_else(|| args.path.as_path().with_extension("pal.bin"));
+    let bin_out_path = args
+        .bin
+        .unwrap_or_else(|| args.path.as_path().with_extension("bin"));
+    let pal_out_path = args
+        .pal
+        .unwrap_or_else(|| args.path.as_path().with_extension("pal.bin"));
 
     let mut decoder = png::Decoder::new(File::open(args.path)?);
     let mut trans = Transformations::normalize_to_color8();
@@ -58,7 +63,7 @@ fn main() -> std::io::Result<()> {
     let mut palette_file = File::create(pal_out_path)?;
     let mut pal_vec: Vec<(&(u8, u8, u8), &u8)> = palette.iter().collect();
     pal_vec.sort_by(|a, b| a.1.cmp(b.1));
-    for ((r,g,b), _) in pal_vec.iter() {
+    for ((r, g, b), _) in pal_vec.iter() {
         debug!("{},{},{}", r, g, b);
         palette_file.write(&[*b, *g, *r, 255])?;
     }
