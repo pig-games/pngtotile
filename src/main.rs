@@ -12,13 +12,7 @@ fn main() -> std::io::Result<()> {
     trans.insert(Transformations::from_bits_truncate(0x0002));
     decoder.set_transformations(trans);
     let mut reader = decoder.read_info().unwrap();
-    debug!("png info: {:?}", reader.info());
-    // Allocate the output buffer.
-    // let mut buf = vec![0; reader.output_buffer_size()];
-    // Read the next frame. An APNG might contain multiple frames.
-    // let info = reader.next_frame(&mut buf).unwrap();
-    // Grab the bytes of the image.
-    // let bytes = &buf[..info.buffer_size()];
+    println!("png info: {:?}", reader.info());
     let mut out_file = File::create("out.bin").unwrap();
     let mut buf = vec![0; reader.output_buffer_size()];
     // Read the next frame. An APNG might contain multiple frames.
@@ -44,7 +38,7 @@ fn main() -> std::io::Result<()> {
         } else {
             palette.insert(rgb, last_index);
             out_file.write(&[last_index]).unwrap();
-            debug!("{:?}", rgb);
+            println!("{:?}", rgb);
             last_index += 1;
         }
     }
@@ -52,8 +46,8 @@ fn main() -> std::io::Result<()> {
     let mut pal_vec: Vec<(&(u8, u8, u8), &u8)> = palette.iter().collect();
     pal_vec.sort_by(|a, b| a.1.cmp(b.1));
     for ((r,g,b), _) in pal_vec.iter() {
-        debug!("{},{},{}", r, g, b);
-        palette_file.write(&[*r, *g, *b, 255]).unwrap();
+        println!("{},{},{}", r, g, b);
+        palette_file.write(&[*b, *g, *r, 255]).unwrap();
     }
     Ok(())
 }
