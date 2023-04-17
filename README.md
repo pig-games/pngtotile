@@ -12,9 +12,9 @@ Transparency for the background is treated as follows:
 
 The converter is written in Rust and can be easily build using cargo.
 
-# If you don't have Rust installed yet, follow the easy instructions [here](https://rust-lang.org).
-# Clone this repository and cd into the pngtotile folder.
-# run: cargo install --path .
+1. If you don't have Rust installed yet, follow the easy instructions [here](https://rust-lang.org).
+2. Clone this repository and cd into the pngtotile folder.
+3. run: cargo install --path .
 
 This should build and install the pngtotile executable and tell you where it is installed into.
 
