@@ -1,9 +1,10 @@
+mod convert_256;
+mod convert_indexed;
+
 use clap::Parser;
-use log::debug;
-use png::Transformations;
-use std::collections::HashMap;
+
 use std::fs::File;
-use std::io::prelude::*;
+use std::io::{Error, ErrorKind};
 use std::path::PathBuf;
 
 #[derive(Parser, Debug)]
@@ -27,45 +28,15 @@ fn main() -> std::io::Result<()> {
         .pal
         .unwrap_or_else(|| args.path.as_path().with_extension("pal.bin"));
 
-    let mut decoder = png::Decoder::new(File::open(args.path)?);
-    let mut trans = Transformations::normalize_to_color8();
-    trans.insert(Transformations::from_bits_truncate(0x0002));
-    decoder.set_transformations(trans);
+    let decoder = png::Decoder::new(File::open(args.path)?);
     let mut reader = decoder.read_info()?;
-    let mut out_file = File::create(bin_out_path)?;
-    let mut buf = vec![0; reader.output_buffer_size()];
-    let info = reader.next_frame(&mut buf)?;
-    // Grab the bytes of the image.
-    let bytes = &buf[..info.buffer_size()];
-    let mut palette: HashMap<(u8, u8, u8), u8> = HashMap::new();
-    let mut byte_iter = bytes.iter();
-    let mut last_index = 0;
-    loop {
-        let Some(r) = byte_iter.next() else {
-                break;
-            };
-        let Some(g) = byte_iter.next() else {
-                break;
-            };
-        let Some(b) = byte_iter.next() else {
-                break;
-            };
-        let rgb = (*r, *g, *b);
-        if let Some(index) = palette.get(&rgb) {
-            out_file.write(&[*index])?;
-        } else {
-            palette.insert(rgb, last_index);
-            out_file.write(&[last_index])?;
-            debug!("{:?}", rgb);
-            last_index += 1;
+
+    let color_type = reader.info().color_type;
+    match color_type {
+        png::ColorType::Rgb => convert_256::convert(&mut reader, &bin_out_path, &pal_out_path),
+        png::ColorType::Indexed => {
+            convert_indexed::convert(&mut reader, &bin_out_path, &pal_out_path)
         }
+        _ => Err(Error::new(ErrorKind::Other, "Unsupported color type")),
     }
-    let mut palette_file = File::create(pal_out_path)?;
-    let mut pal_vec: Vec<(&(u8, u8, u8), &u8)> = palette.iter().collect();
-    pal_vec.sort_by(|a, b| a.1.cmp(b.1));
-    for ((r, g, b), _) in pal_vec.iter() {
-        debug!("{},{},{}", r, g, b);
-        palette_file.write(&[*b, *g, *r, 255])?;
-    }
-    Ok(())
 }
